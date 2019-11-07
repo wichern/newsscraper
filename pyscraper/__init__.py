@@ -6,28 +6,35 @@ import os
 import urllib.request
 import datetime
 import selenium
+import ntpath
+import uuid
 
 class PyScraper(object):
-    def __init__(self, script):
-        self.known_urls = set()
-        self.script = script
+    def __init__(self, argv):
+        self.script = ntpath.basename(argv[0])
+        if self.script.endswith('.py'):
+            self.script = self.script[:-3]
         self.pickle_dir = './pickle/'
-        self.pickle_path_script = self.pickle_dir + script + '.pickle'
-        self.pickle_path_global = self.pickle_dir + 'pyscraper.pickle'
-        self.download_dir = './downloads/' + script
-        self.report_dir = './reports/'
-        self.items = dict()
-        self.report_id = 1
+        self.pickle_path = self.pickle_dir + self.script + '.pickle'
+        self.download_dir = './downloads/' + self.script
+        self.report_file = 'report.json'
         self.driver = None
+        self.headless = 'headless' in argv
+        self.loglevel = 3 if 'verbose' in argv else 2
+        self.dryrun = 'dry' in argv
 
-        if os.path.exists(self.pickle_path_script):
-            with open(self.pickle_path_script, 'rb') as infile:
+        self.known_urls = set()
+        if os.path.exists(self.pickle_path):
+            with open(self.pickle_path, 'rb') as infile:
                 data = pickle.load(infile)
                 self.known_urls = data['urls']
-        if os.path.exists(self.pickle_path_global):
-            with open(self.pickle_path_global, 'rb') as infile:
-                data = pickle.load(infile)
-                self.report_id = data['report_id'] + 1
+                print('Openend {:s} from {:s}'.format(self.pickle_path, data['last_date']))
+
+        self.items = dict()
+        if os.path.exists(self.report_file):
+            with open(self.report_file, 'r') as infile:
+                self.items = json.load(infile)
+        self.item_count = len(self.items)
 
     def __enter__(self):
         return self
@@ -35,32 +42,24 @@ class PyScraper(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if self.driver:
             self.driver.close()
-
-        if len(self.items) == 0:
-            print('No new items found.')
+        if self.dryrun:
             return
-
-        report_dir = self.report_dir + str(self.report_id) + '/'
-        if not os.path.exists(report_dir):
-            os.makedirs(report_dir)
-        reportPath = report_dir + self.script + '.json'
-        print('Report over {:d} items written to {:s}'.format(len(self.items), reportPath))
-        with open(reportPath, 'w') as outfile:
-            json.dump(self.items, outfile)
-
+        with open(self.report_file, 'w') as outfile:
+            json.dump(self.items, outfile, indent=4)
+            new_item_count = len(self.items) - self.item_count
+            self.logI('Write {:d} new items to {:s}'.format(new_item_count, self.report_file))
         if not os.path.exists(self.pickle_dir):
             os.makedirs(self.pickle_dir)
-        with open(self.pickle_path_script, 'wb') as outfile:
-            pickle.dump({ 'urls': self.known_urls }, outfile)
-        with open(self.pickle_path_global, 'wb') as outfile:
-            pickle.dump({ 'report_id': self.report_id }, outfile)
+        with open(self.pickle_path, 'wb') as outfile:
+            pickle.dump({ 'urls': self.known_urls, 'last_date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") }, outfile)
 
-    def get_webdriver(self, headless=True):
+    def get_webdriver(self, size=[1024,768]):
         if self.driver:
             return self.driver
         options = selenium.webdriver.ChromeOptions()
-        if headless:
+        if self.headless:
             options.add_argument('headless')
+        options.add_argument('window-size={:d},{:d}'.format(size[0], size[1]))
         self.driver = selenium.webdriver.Chrome('./assets/chromedriver', chrome_options=options)
         return self.driver
 
@@ -78,7 +77,23 @@ class PyScraper(object):
     def has_url(self, url):
         return url in self.known_urls
 
-    def add_item(self, url, title = '', date = datetime.datetime.now().strftime("%Y-%m-%d")):
-        print('New item: {:s}'.format(url))
+    def add_item(self, url, title = '', date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")):
+        if title:
+            self.logI('New item: {:s}'.format(title))
+        else:
+            self.logI('New item: {:s}'.format(url))
         self.known_urls.add(url)
-        self.items[url] = { 'title': title, 'date': date }
+        key = self.script + '_' + str(uuid.uuid4())
+        self.items[key] = { 'url': url, 'title': title, 'date': date }
+
+    def logI(self, msg):
+        if self.loglevel >= 3:
+            print(msg)
+
+    def logW(self, msg):
+        if self.loglevel >= 2:
+            print(msg)
+
+    def logE(self, msg):
+        if self.loglevel >= 1:
+            print(msg)
