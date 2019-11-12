@@ -23,11 +23,15 @@
 <script>
 function insert(item) {
   $('#cardlist').append(`
-      <div class="card m-1" style="max-width:280px">
+      <div class="card m-1 ${'hot' in item ? 'bg-info text-white' : ''}" style="max-width:280px">
         <div class="card-header">
-          <a href="${item['url']}">${item['title']}</a>
+          <a href="${item['url']}" style="color: inherit">${item['title']}</a>
         </div>
-        <img class="card-img-top img-responsive" data-original="${item['img']}" style="max-width:270px"></img>
+        <div class="card-body">
+          <a href="${item['url']}">
+            <img class="card-img-top img-responsive" data-original="${item['img']}" style="max-width:270px"></img>
+          </a>
+        </div>
       </div>`)
 }
 
