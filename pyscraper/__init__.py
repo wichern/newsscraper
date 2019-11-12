@@ -14,7 +14,7 @@ class PyScraper(object):
         self.script = ntpath.basename(argv[0])
         if self.script.endswith('.py'):
             self.script = self.script[:-3]
-        self.pickle_dir = './pickle/'
+        self.pickle_dir = './.pickle/'
         self.pickle_path = self.pickle_dir + self.script + '.pickle'
         self.download_dir = './downloads/' + self.script
         self.report_file = 'report.json'
@@ -31,7 +31,7 @@ class PyScraper(object):
                 print('Openend {:s} from {:s}'.format(self.pickle_path, data['last_date']))
 
         self.items = dict()
-        if os.path.exists(self.report_file):
+        if os.path.exists(self.report_file) and os.stat(self.report_file).st_size > 0:
             with open(self.report_file, 'r') as infile:
                 self.items = json.load(infile)
         self.item_count = len(self.items)
@@ -63,7 +63,7 @@ class PyScraper(object):
         self.driver = selenium.webdriver.Chrome('./assets/chromedriver', chrome_options=options)
         return self.driver
 
-    def download(self, url, dest = None, overwrite=False):
+    def download(self, url, dest=None, overwrite=False):
         if not os.path.exists(self.download_dir):
             os.makedirs(self.download_dir)
         if not dest:
@@ -77,14 +77,25 @@ class PyScraper(object):
     def has_url(self, url):
         return url in self.known_urls
 
-    def add_item(self, url, title = '', date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")):
+    def add_item(self, url, title='', img='', date=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), hot=False):
         if title:
             self.logI('New item: {:s}'.format(title))
         else:
             self.logI('New item: {:s}'.format(url))
+
         self.known_urls.add(url)
-        key = self.script + '_' + str(uuid.uuid4())
-        self.items[key] = { 'url': url, 'title': title, 'date': date }
+
+        key = str(uuid.uuid4());
+        self.items[key] = {
+            'url': url,
+            'img': img,
+            'title': title,
+            'date': date,
+            'script': self.script
+        }
+
+        if hot:
+            self.items[key]['hot'] = True
 
     def logI(self, msg):
         if self.loglevel >= 3:
@@ -97,3 +108,26 @@ class PyScraper(object):
     def logE(self, msg):
         if self.loglevel >= 1:
             print(msg)
+
+# ------------------------------------------------------------------------------
+
+def html_report(report_path, out_path):
+    if not os.path.exists(report_path):
+        print('{:s} not found!'.format(report_path))
+        return
+
+    template_path = os.path.dirname(os.path.realpath(__file__)) + '/report.html'
+    if not os.path.exists(template_path):
+        print('Template {:s} not found!'.format(template_path))
+        return
+
+    with open(report_path, 'r') as infile:
+        items = json.load(infile)
+
+        if len(items) == 0:
+            print('No items in {:s}.'.format(report_path))
+            return
+
+        with open(template_path, 'r') as template:
+            with open(out_path, 'w') as outfile:
+                outfile.write(template.read().replace('__ITEMS__', json.dumps(items)))

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.lazyload/1.9.1/jquery.lazyload.min.js" integrity="sha256-rXnOfjTRp4iAm7hTAxEz3irkXzwZrElV2uRsdJAYjC4=" crossorigin="anonymous"></script>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
+    <title>pyscraper report</title>
+   </head>
+   <body>
+      <nav class="navbar navbar-dark bg-dark">
+        <a class="navbar-brand" href="#" onclick="overview()">PyScraper</a>
+      </nav>
+      <div class="container" style="padding-top: 20px; spacing: 5px" id="main">
+        <div class="row" id="cardlist"></div>
+      </div>
+   </body>
+</html>
+
+<script>
+function insert(item) {
+  $('#cardlist').append(`
+      <div class="card m-1" style="max-width:280px">
+        <div class="card-header">
+          <a href="${item['url']}">${item['title']}</a>
+        </div>
+        <img class="card-img-top img-responsive" data-original="${item['img']}" style="max-width:270px"></img>
+      </div>`)
+}
+
+function overview() {
+  $('#cardlist').empty();
+
+  rows = ''
+  for (script in stats) {
+    rows += `
+      <tr>
+        <td>${script}</td>
+        <td>
+          <a href="#${script}"
+             class="button btn-default btn-sm"
+             role="button"
+             onclick="list('${script}')">
+            ${stats[script].total} total
+          </a>
+          <a href="#${script}"
+             class="button btn-info btn-sm"
+             role="button"
+             onclick="list('${script}', true)">
+            ${stats[script].hot} hot
+          </a>
+        </td>
+      </tr>`;
+  }
+
+  $('#cardlist').append(`
+    <div class="card m-1">
+      <div class="card-header">Scraplings</div>
+      <div class="card-block">
+        <table class="table table-hover">
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>
+    </div>`);
+}
+
+function list(scriptling, hotOnly=false) {
+  $('#cardlist').empty();
+
+  for (key in items) {
+    item = items[key]
+    if (scriptling != null && scriptling != 'all scripts' && item['script'] != scriptling) {
+      continue;
+    }
+    if (hotOnly && !('hot' in item)) {
+      continue;
+    }
+    insert(item);
+  }
+
+  $('#main .img-responsive').lazyload({ });
+}
+
+var items = __ITEMS__;
+var stats = {};
+
+$(document).ready(function() {
+  // calculate stats
+  stats['all scripts'] = {
+    'total': Object.keys(items).length,
+    'hot': 0
+  };
+
+  for (key in items) {
+    script = items[key]['script']
+    if (script in stats) {
+      stats[script]['total'] += 1;
+    } else {
+      stats[script] = {
+        'total': 1,
+        'hot': 0
+      };
+    }
+    if ('hot' in items[key]) {
+      stats[script]['hot'] += 1;
+      stats['all scripts']['hot'] += 1;
+    }
+  }
+
+  // show overview
+  overview();
+});
+</script>
