@@ -18,7 +18,7 @@ class PyScraper(object):
         parser.add_argument('--quiet', '-q', action='store_true')
         parser.add_argument('--pickle', type=str, default='./.pickle/__script__.pickle', help='Pickle file containing all known urls.')
         parser.add_argument('--download_dir', type=str, default='./downloads/__script__/')
-        parser.add_argument('--screensize', type=str, default='1024x768', help='Browser screen size')
+        parser.add_argument('--screensize', type=str, default='1024,768', help='Browser screen size')
 
         self.args = parser.parse_args(argv[1:])
         self.script = os.path.splitext(os.path.basename(argv[0]))[0]
@@ -29,6 +29,10 @@ class PyScraper(object):
             options = selenium.webdriver.ChromeOptions()
             if self.args.headless:
                 options.add_argument('headless')
+            for extension in os.listdir('./assets/'):
+                if extension.endswith('.crx'):
+                    self.say('Add chrome extension: {:s}'.format(extension))
+                    options.add_extension('./assets/' + extension)
             options.add_argument('window-size={:s}'.format(self.args.screensize))
             self.driver = selenium.webdriver.Chrome('./assets/chromedriver', chrome_options=options)
         else:
@@ -54,6 +58,8 @@ class PyScraper(object):
         if self.driver:
             self.driver.close()
         if self.args.dry:
+            return
+        if exc_type:
             return
         with open(self.args.out, 'w') as outfile:
             json.dump(self.items, outfile, indent=4)
