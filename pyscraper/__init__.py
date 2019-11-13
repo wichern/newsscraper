@@ -1,38 +1,49 @@
 #!/usr/bin/env python3
 
-import pickle
+import argparse
+import datetime
 import json
 import os
-import urllib.request
-import datetime
+import pickle
 import selenium
-import ntpath
+import urllib.request
 import uuid
 
 class PyScraper(object):
-    def __init__(self, argv):
-        self.script = ntpath.basename(argv[0])
-        if self.script.endswith('.py'):
-            self.script = self.script[:-3]
-        self.pickle_dir = './.pickle/'
-        self.pickle_path = self.pickle_dir + self.script + '.pickle'
-        self.download_dir = './downloads/' + self.script
-        self.report_file = 'report.json'
-        self.driver = None
-        self.headless = 'headless' in argv
-        self.loglevel = 3 if 'verbose' in argv else 2
-        self.dryrun = 'dry' in argv
+    def __init__(self, argv, parser=argparse.ArgumentParser(prog='pyscraper')):
+        parser.add_argument('--out', type=str, default='report.json', help='Output file')
+        parser.add_argument('--driver', type=str, default='chrome', help='Selenium Webdriver (default=chrome)')
+        parser.add_argument('--headless', action='store_true')
+        parser.add_argument('--dry', action='store_true', help='Do not actually download or store results.')
+        parser.add_argument('--quiet', '-q', action='store_true')
+        parser.add_argument('--pickle', type=str, default='./.pickle/__script__.pickle', help='Pickle file containing all known urls.')
+        parser.add_argument('--download_dir', type=str, default='./downloads/__script__/')
+        parser.add_argument('--screensize', type=str, default='1024x768', help='Browser screen size')
+
+        self.args = parser.parse_args(argv[1:])
+        self.script = os.path.splitext(os.path.basename(argv[0]))[0]
+        self.pickle = self.args.pickle.replace('__script__', self.script)
+        self.download_dir = self.args.download_dir.replace('__script__', self.script)
+
+        if self.args.driver == 'chrome':
+            options = selenium.webdriver.ChromeOptions()
+            if self.args.headless:
+                options.add_argument('headless')
+            options.add_argument('window-size={:s}'.format(self.args.screensize))
+            self.driver = selenium.webdriver.Chrome('./assets/chromedriver', chrome_options=options)
+        else:
+            raise ValueError('Driver "{:s}" not found!'.format(self.args.driver))
 
         self.known_urls = set()
-        if os.path.exists(self.pickle_path):
-            with open(self.pickle_path, 'rb') as infile:
+        if os.path.exists(self.pickle):
+            with open(self.pickle, 'rb') as infile:
                 data = pickle.load(infile)
                 self.known_urls = data['urls']
-                print('Openend {:s} from {:s}'.format(self.pickle_path, data['last_date']))
+                self.say('Openend {:s} from {:s}'.format(self.pickle, data['last_date']))
 
         self.items = dict()
-        if os.path.exists(self.report_file) and os.stat(self.report_file).st_size > 0:
-            with open(self.report_file, 'r') as infile:
+        if os.path.exists(self.args.out) and os.stat(self.args.out).st_size > 0:
+            with open(self.args.out, 'r') as infile:
                 self.items = json.load(infile)
         self.item_count = len(self.items)
 
@@ -42,49 +53,38 @@ class PyScraper(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if self.driver:
             self.driver.close()
-        if self.dryrun:
+        if self.args.dry:
             return
-        with open(self.report_file, 'w') as outfile:
+        with open(self.args.out, 'w') as outfile:
             json.dump(self.items, outfile, indent=4)
             new_item_count = len(self.items) - self.item_count
-            self.logI('Write {:d} new items to {:s}'.format(new_item_count, self.report_file))
-        if not os.path.exists(self.pickle_dir):
-            os.makedirs(self.pickle_dir)
-        with open(self.pickle_path, 'wb') as outfile:
+            self.say('Write {:d} new items to {:s}'.format(new_item_count, self.args.out))
+        pickle_path = os.path.dirname(os.path.abspath(self.pickle))
+        if not os.path.exists(pickle_path):
+            os.makedirs(pickle_path)
+        with open(self.pickle, 'wb') as outfile:
             pickle.dump({ 'urls': self.known_urls, 'last_date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") }, outfile)
 
-    def get_webdriver(self, size=[1024,768]):
-        if self.driver:
-            return self.driver
-        options = selenium.webdriver.ChromeOptions()
-        if self.headless:
-            options.add_argument('headless')
-        options.add_argument('window-size={:d},{:d}'.format(size[0], size[1]))
-        self.driver = selenium.webdriver.Chrome('./assets/chromedriver', chrome_options=options)
-        return self.driver
+    def __contains__(self, url):
+        return url in self.known_urls
 
     def download(self, url, dest=None, overwrite=False):
+        if self.args.dry:
+            return
         if not os.path.exists(self.download_dir):
             os.makedirs(self.download_dir)
         if not dest:
             dest = url[url.rfind("/")+1:]
-        dest_path = self.download_dir + '/' + dest
+        dest_path = self.download_dir + dest
         if overwrite == False and os.path.exists(dest_path):
             return False
         urllib.request.urlretrieve(url, dest_path)
         return True
 
-    def has_url(self, url):
-        return url in self.known_urls
-
-    def add_item(self, url, title='', img='', date=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), hot=False):
-        if title:
-            self.logI('New item: {:s}'.format(title))
-        else:
-            self.logI('New item: {:s}'.format(url))
+    def add(self, url, title='', img='', hot=False, date=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")):
+        self.say('+ {:s}'.format(title if title else url))
 
         self.known_urls.add(url)
-
         key = str(uuid.uuid4());
         self.items[key] = {
             'url': url,
@@ -97,16 +97,8 @@ class PyScraper(object):
         if hot:
             self.items[key]['hot'] = True
 
-    def logI(self, msg):
-        if self.loglevel >= 3:
-            print(msg)
-
-    def logW(self, msg):
-        if self.loglevel >= 2:
-            print(msg)
-
-    def logE(self, msg):
-        if self.loglevel >= 1:
+    def say(self, msg):
+        if not self.args.quiet:
             print(msg)
 
 # ------------------------------------------------------------------------------
