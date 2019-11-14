@@ -120,23 +120,12 @@ class PyScraper(object):
 
 # ------------------------------------------------------------------------------
 
-def html_report(report_path, out_path):
-    if not os.path.exists(report_path):
-        print('{:s} not found!'.format(report_path))
-        return
+def merge_results(inputs, output):
+    items = dict()
 
-    template_path = os.path.dirname(os.path.realpath(__file__)) + '/report.html'
-    if not os.path.exists(template_path):
-        print('Template {:s} not found!'.format(template_path))
-        return
+    for file in inputs:
+        with open(file, 'r', encoding='utf-8') as infile:
+            items.update(json.load(infile))
 
-    with open(report_path, 'r') as infile:
-        items = json.load(infile)
-
-        if len(items) == 0:
-            print('No items in {:s}.'.format(report_path))
-            return
-
-        with open(template_path, 'r') as template:
-            with open(out_path, 'w') as outfile:
-                outfile.write(template.read().replace('__ITEMS__', json.dumps(items)))
+    with open(output, 'w') as out:
+        json.dump(items, out, indent=4)
