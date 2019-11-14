@@ -6,11 +6,10 @@ the scraped items in a simple HTML5 report. It is build with `python3` and `Sele
 ## Installation
 
 ```bash
-sudo apt-get install python3 python3-pip
-pip3 install selenium
+pip3 install selenium pyscraper
 ```
 
-Install the Chrome browser.
+Install a third-party webdriver from https://www.seleniumhq.org/download/#thirdPartyDrivers into your assets directory (default: `./assets/`).
 
 ```bash
 wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
@@ -58,6 +57,10 @@ Use `create_html_report.py` for creating the HTML5 report.
 ```bash
 ./create_html_report.py report.json report.html
 ```
+
+## Changes
+
+* 0.0.1 initial version
 
 ## Resources
 
