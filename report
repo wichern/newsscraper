@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+
+import pyscraper.report
+import sys
+
+pyscraper.report.HTML5Report(sys.stdin).write(sys.stdout)

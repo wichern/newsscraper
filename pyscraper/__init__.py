@@ -55,7 +55,7 @@ class PyScraper(object):
             with open(self.pickle, 'rb') as infile:
                 data = pickle.load(infile)
                 self.known_urls = data['urls']
-                self.say('Openend {:s} from {:s}'.format(self.pickle, data['last_date']))
+                self.say('Opened {:s} from {:s}'.format(self.pickle, data['last_date']))
 
         self.items = dict()
         if os.path.exists(self.args.out) and os.stat(self.args.out).st_size > 0:

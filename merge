@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+
+import json
+import sys
+import os
+
+items = dict()
+for file in sys.argv[1:]:
+    with open(file, 'r', encoding='utf-8') as infile:
+        items.update(json.load(infile))
+
+sys.stdout.write(json.dumps(items))

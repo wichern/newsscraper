@@ -6,8 +6,7 @@ import os
 
 class HTML5Report(object):
     def __init__(self, input):
-        with open(input, 'r') as infile:
-            self.items = json.load(infile)
+        self.items = json.load(input)
         template_path = os.path.dirname(os.path.abspath(__file__)) + '/report.html'
         with open(template_path, 'r') as infile:
             self.template = infile.read()
@@ -17,8 +16,7 @@ class HTML5Report(object):
 
 class CSVReport(object):
     def __init__(self, input):
-        with open(input, 'r') as infile:
-            self.items = json.load(infile)
+        self.items = json.load(input)
 
     def write(self, output):
         writer = csv.DictWriter(output, self.items.keys())
