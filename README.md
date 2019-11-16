@@ -1,68 +1,60 @@
-# pyscraper
+# newsscraper
 
-`pyscraper` aims to provide a simple library for scraping the web and providing
-the scraped items in a simple HTML5 report. It is build with `python3` and `Selenium`.
+`newsscraper` provides a simple framework for scraping web news with
+[Selenium](https://www.seleniumhq.org/) and
+[Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/). `newsscraper`
+will take care of remembering which news items where already read and creates
+results in form of `json`, `csv`, or `html` files.
 
-## Installation
+An minimal scraper for `newsscraper` that fetches the newest questions from
+https://stackoverflow.com/questions could look like this:
 
-```bash
-pip3 install selenium pyscraper
-```
-
-Install a third-party webdriver from https://www.seleniumhq.org/download/#thirdPartyDrivers into your assets directory (default: `./assets/`).
-
-```bash
-wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-sudo dpkg -i google-chrome-stable_current_amd64.deb
-rm google-chrome-stable_current_amd64.deb
-```
-
-Get matching chromedriver from https://sites.google.com/a/chromium.org/chromedriver/downloads and put it in `./assets/chromedriver` subdirectory.
-
-```
-mkdir assets
-cd assets
-wget https://chromedriver.storage.googleapis.com/78.0.3904.70/chromedriver_linux64.zip
-unzip chromedriver_linux64.zip
-rm chromedriver_linux64.zip
-```
-
-## Usage
-
-This sample script will parse the head page of stackoverflow.com for questions.
-It will save all results as `report.json`.
-
-```python3
-#!/usr/bin/env python3
-
-import pyscraper
+```python
+import newsscraper
 import selenium.webdriver
 import sys
 
-with pyscraper.PyScraper(sys.argv) as scraper:
+with newsscraper.Scraper(sys.argv) as scraper:
     scraper.driver.get('https://stackoverflow.com/questions')
 
     for question in scraper.driver.find_elements_by_xpath('//a[@class="question-hyperlink"]'):
         url = question.get_attribute('href')
-        title = question.text
-
-        # Avoid adding an url twice.
-        if url in scraper:
+        if url in scraper: # Avoid adding an news item twice.
             continue
-
-        scraper.add(url, title)
+        scraper.add(url, question.text)
 ```
 
-Use `create_html_report.py` for creating the HTML5 report.
+Additional configuration can be provided with arguments.
+```sh
+python3 stackoverflow.py --headless --out=$(date '+%Y-%m-%d %H:%M:%S').html
+```
+
+Run `python3 stackoverflow.py -h` for a list of all arguments.
+
+## Features
+
+* Remember already added items.
+* Create reports in `json`, `csv`, `html`, or a custom format.
+* Merge multiple `json` reports.
+* Custom command-line arguments.
+
+Read the [documentation](Documentation.md) for more details.
+
+## Installation
+
 ```bash
-./create_html_report.py report.json report.html
+pip3 install newsscraper
 ```
+
+If you want to use the selenium drivers you have to download the corresponding
+[third party drivers](https://www.seleniumhq.org/download/#thirdPartyDrivers)
+in the `./assets/` subdirectory to your script. `pyscraper` will also
+automatically load all add-ons you place in `./assets/`.
 
 ## Changes
 
 * 0.0.1 initial version
 
-## Resources
+## License
 
-* https://selenium-python.readthedocs.io/
-* https://www.w3schools.com/xml/xpath_intro.asp
+This project is licensed under the MIT License - see the LICENSE file for details.
