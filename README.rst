@@ -41,7 +41,7 @@ Features
 - Merge multiple `json` reports.
 - Custom command-line arguments.
 
-Read the `documentation <Documentation.rst>`_ for more details.
+Read the `documentation <https://github.com/wichern/newsscraper/blob/master/Documentation.rst>`_ for more details.
 
 ************
 Installation
@@ -65,4 +65,4 @@ Changes
 License
 *******
 
-This project is licensed under the MIT License - see the `LICENSE <LICENSE>`_ for details.
+This project is licensed under the MIT License - see the `LICENSE <https://github.com/wichern/newsscraper/blob/master/LICENSE>`_ for details.
