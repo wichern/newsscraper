@@ -3,6 +3,9 @@ from setuptools import setup
 with open('README.rst', 'r') as fh:
     long_description = fh.read()
 
+with open('requirements.txt', 'r') as fh:
+    requirements = fh.read().splitlines()
+
 setup(name='newsscraper',
       version='0.1.0',
       description='News scraping and reporting.',
@@ -21,7 +24,4 @@ setup(name='newsscraper',
       ],
       python_requires='>=3.6',
       packages=['newsscraper'],
-      install_requires=[
-          'selenium',
-          'beautifulsoup4'
-      ])
+      install_requires=requirements)
