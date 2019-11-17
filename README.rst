@@ -11,6 +11,7 @@ https://stackoverflow.com/questions can look like this:
 
 .. code-block:: python3
 
+ # content of stackoverflow.py
  import newsscraper
  import selenium.webdriver
  import sys
@@ -42,6 +43,17 @@ Features
 - Custom command-line arguments.
 
 Read the `documentation <https://github.com/wichern/newsscraper/blob/master/Documentation.rst>`_ for more details.
+
+*******
+Roadmap
+*******
+
+- Proxy support
+- Sort items by date in HTML5 report
+- Tags in HTML5 report
+- Custom report templates
+- RSS reports
+- python2 suport
 
 ************
 Installation

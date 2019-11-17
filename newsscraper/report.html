@@ -29,7 +29,7 @@ function insert(item) {
         </div>
         <div class="card-body">
           <a href="${item['url']}">
-            <img class="card-img-top img-responsive" data-original="${item['img']}" style="max-width:270px"></img>
+            <img class="card-img-top img-responsive" data-original="${item['thumb']}" style="max-width:270px"></img>
           </a>
         </div>
       </div>`)
@@ -76,8 +76,8 @@ function overview() {
 function list(scriptling, hotOnly=false) {
   $('#cardlist').empty();
 
-  for (key in items) {
-    item = items[key]
+  for (i in items) {
+    item = items[i]
     if (scriptling != null && scriptling != 'all scripts' && item['script'] != scriptling) {
       continue;
     }
@@ -100,8 +100,9 @@ $(document).ready(function() {
     'hot': 0
   };
 
-  for (key in items) {
-    script = items[key]['script']
+  for (i in items) {
+    item = items[i]
+    script = item['script']
     if (script in stats) {
       stats[script]['total'] += 1;
     } else {
@@ -110,7 +111,7 @@ $(document).ready(function() {
         'hot': 0
       };
     }
-    if ('hot' in items[key]) {
+    if ('hot' in item) {
       stats[script]['hot'] += 1;
       stats['all scripts']['hot'] += 1;
     }
