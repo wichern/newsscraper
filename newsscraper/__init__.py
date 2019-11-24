@@ -62,8 +62,8 @@ class Scraper(object):
             argv (list):                Typically just sys.argv.
             parser (argument parser):   Override the default argparser to add
                                         custom arguments to a script.
-            report (func):              Function for the report document.
-            script (str):               Script name (defaults to sys.argv[0]).
+            report (func):              Report creation function.
+            script (str):               Script name (defaults to argv[0]).
         '''
 
         parser.add_argument('--out', \
@@ -80,7 +80,7 @@ class Scraper(object):
                             help='Print some logs')
         parser.add_argument('--dry', \
                             action='store_true', \
-                            help='Do not actually download or store results.')
+                            help='Do not add keys to list of known keys. Do not download anything.')
         parser.add_argument('--pickle', \
                             type=str, \
                             default='./.pickle/__script__.pickle', \
@@ -98,7 +98,7 @@ class Scraper(object):
         self.report = report
         self.args = parser.parse_args(argv[1:])
 
-        if self.args.verbose and self.args.out == sys.stdout and not self.args.dry:
+        if self.args.verbose and self.args.out == sys.stdout:
             raise ValueError('Should not use --verbose with stdout output.')
 
         if script:
@@ -130,8 +130,6 @@ class Scraper(object):
             self.firefox.close()
         if self.chrome:
             self.chrome.close()
-        if self.args.dry:
-            return
         if exc_type:
             return
 
@@ -139,15 +137,16 @@ class Scraper(object):
         self.say('Report {:d} items.'.format(len(self.items)))
         self.report(self.items, self.args.out, self.args.report)
 
-        # Write pickle.
-        pickle_path = os.path.dirname(os.path.abspath(self.pickle))
-        if not os.path.exists(pickle_path):
-            os.makedirs(pickle_path)
-        with open(self.pickle, 'wb') as outfile:
-            pickle.dump({
-                'keys': self.keys,
-                'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }, outfile)
+        if not self.args.dry:
+            # Write pickle.
+            pickle_path = os.path.dirname(os.path.abspath(self.pickle))
+            if not os.path.exists(pickle_path):
+                os.makedirs(pickle_path)
+            with open(self.pickle, 'wb') as outfile:
+                pickle.dump({
+                    'keys': self.keys,
+                    'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }, outfile)
 
     def __contains__(self, key):
         return key in self.keys
@@ -217,11 +216,11 @@ class Scraper(object):
             thumb='',
             tags=[],
             date=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            data=dict()):
+            data=dict(),
+            script=None):
         '''Add item to report.
 
-        This will not check whether the provided key is already known.
-        Please use ``if not key in scraper:`` to avoid adding items twice.
+        An item with an already known key will be ignored.
 
         Args:
             key (str):      A unique key for this item.
@@ -233,10 +232,14 @@ class Scraper(object):
             date (date):    Item date (default: now())
             data (dict):    Additional key-value pairs that shall be added to
                             the item.
+            script (str):   Override the script name.
         '''
+        if key in self.keys:
+            return
+
         self.say('+ {:s}'.format(title if title else key))
         self.keys.add(key)
-        item = dict()
+        item = { 'script': script if script else self.script }
         if title:
             item['title'] = title
         if url:
@@ -258,14 +261,13 @@ class Scraper(object):
 # ------------------------------------------------------------------------------
 
 def merge_results(inputs, output):
-    items = dict()
+    items = []
 
     for file in inputs:
+        if os.stat(file).st_size == 0:
+            continue
         with open(file, 'r', encoding='utf-8') as infile:
-            items.update(json.load(infile))
+            items += json.load(infile)
 
     with open(output, 'w') as out:
         json.dump(items, out, indent=4)
-
-def test_dummy():
-    assert True

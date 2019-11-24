@@ -22,14 +22,17 @@
 
 <script>
 function insert(item) {
+  card_width = 'card_width' in item ? item['card_width'] : '270px'
+
   $('#cardlist').append(`
-      <div class="card m-1 ${'hot' in item ? 'bg-info text-white' : ''}" style="max-width:280px">
+      <div class="card m-1 ${'hot' in item ? 'bg-info text-white' : ''}">
         <div class="card-header">
           <a href="${item['url']}" style="color: inherit">${item['title']}</a>
         </div>
         <div class="card-body">
           <a href="${item['url']}">
-            <img class="card-img-top img-responsive" data-original="${item['thumb']}" style="max-width:270px"></img>
+            <img class="card-img-top img-responsive" data-original="${item['thumb']}"
+            style="max-width:${card_width}"></img>
           </a>
         </div>
       </div>`)
