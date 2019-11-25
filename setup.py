@@ -1,4 +1,5 @@
 from setuptools import setup
+import newsscraper
 
 with open('README.rst', 'r') as fh:
     long_description = fh.read()
@@ -7,7 +8,7 @@ with open('requirements.txt', 'r') as fh:
     requirements = fh.read().splitlines()
 
 setup(name='newsscraper',
-      version='0.1.0',
+      version=newsscraper.__version__,
       description='News scraping and reporting.',
       long_description=long_description,
       long_description_content_type='text/x-rst',

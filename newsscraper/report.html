@@ -25,7 +25,7 @@ function insert(item) {
   card_width = 'card_width' in item ? item['card_width'] : '270px'
 
   $('#cardlist').append(`
-      <div class="card m-1 ${'hot' in item ? 'bg-info text-white' : ''}">
+      <div class="card m-1 ${'hot' in item ? 'bg-info text-white' : ''}" style="max-width:280px">
         <div class="card-header">
           <a href="${item['url']}" style="color: inherit">${item['title']}</a>
         </div>
