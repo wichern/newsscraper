@@ -6,7 +6,7 @@ Copyright (C) 2019 Paul Wichern
 This code is published under the MIT license.
 '''
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 import argparse
 from bs4 import BeautifulSoup
