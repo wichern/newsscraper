@@ -25,14 +25,13 @@ function insert(item) {
   card_width = 'card_width' in item ? item['card_width'] : '270px'
 
   $('#cardlist').append(`
-      <div class="card m-1 ${'hot' in item ? 'bg-info text-white' : ''}" style="max-width:280px">
+      <div class="card m-1 ${'hot' in item ? 'bg-info text-white' : ''}" style="max-width:${card_width}">
         <div class="card-header">
           <a href="${item['url']}" style="color: inherit">${item['title']}</a>
         </div>
         <div class="card-body">
           <a href="${item['url']}">
-            <img class="card-img-top img-responsive" data-original="${item['thumb']}"
-            style="max-width:${card_width}"></img>
+            <img class="card-img-top img-responsive" data-original="${item['thumb']}"></img>
           </a>
         </div>
       </div>`)
@@ -43,6 +42,18 @@ function overview() {
 
   rows = ''
   for (script in stats) {
+    hot = ''
+    if (stats[script].hot > 0) {
+      hot = `
+        <a href="#${script}"
+           class="button btn-info btn-sm"
+           role="button"
+           onclick="list('${script}', true)">
+          ${stats[script].hot} hot
+        </a>`
+    }
+
+
     rows += `
       <tr>
         <td>${script}</td>
@@ -53,12 +64,7 @@ function overview() {
              onclick="list('${script}')">
             ${stats[script].total} total
           </a>
-          <a href="#${script}"
-             class="button btn-info btn-sm"
-             role="button"
-             onclick="list('${script}', true)">
-            ${stats[script].hot} hot
-          </a>
+          ${hot}
         </td>
       </tr>`;
   }
